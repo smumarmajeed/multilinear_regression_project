@@ -30,8 +30,10 @@ Backend: Python (Flask Framework)
 
 Frontend: HTML, CSS, JavaScript!
 
+Graphing Library: Matplotlib / Chart.js (for data visualization)
+
+
 ![11](https://github.com/user-attachments/assets/33131b6a-3176-4fcc-8c47-0b4649d4158f)
 ![22](https://github.com/user-attachments/assets/4c42cb27-b292-47d5-8533-d23aeb8475d9)
 
-Graphing Library: Matplotlib / Chart.js (for data visualization)
 

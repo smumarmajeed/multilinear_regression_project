@@ -1,0 +1,60 @@
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(to right, #2c3e50, #4ca1af);
+        color: white;
+        text-align: center;
+    }
+    
+    .text-box {
+        margin-top: 60px;
+    }
+    
+    canvas#particleCanvas {
+        display: block;
+        margin: auto;
+        width: 90%;
+        height: auto;
+        background: transparent;
+    }
+    
+    .hero {
+        margin-top: 20px;
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        font-size: 1rem;
+        background-color: #ffffff;
+        color: #2c3e50;
+        border: none;
+        border-radius: 25px;
+        text-decoration: none;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .btn:hover {
+        background-color: #ddd;
+        transform: scale(1.05);
+    }
+    
+    .info-section {
+        background: rgba(255, 255, 255, 0.1);
+        margin: 50px 15%;
+        padding: 30px;
+        border-radius: 15px;
+        font-size: 1.1rem;
+        color: #f0f0f0;
+    }
+    
+    #mathSymbolsCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: -1;
+        pointer-events: none;
+    }
+    
+    html {
+        scroll-behavior: smooth;
+    }

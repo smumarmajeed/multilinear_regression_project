@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>MLR Problem Solver</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Animate a smooth gradient background on the whole page */
+    @keyframes gradientBG {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(270deg, #007cf0, #00dfd8, #00e5ff, #0066ff);
+      background-size: 800% 800%;
+      animation: gradientBG 20s ease infinite;
+      color: #e0f7fa;
+      overflow-x: hidden;
+      position: relative;
+      height: 100vh;
+    }
+
+    /* Floating circles container - full viewport */
+    #floatingCircles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(0, 229, 255, 0.15);
+      animation-timing-function: ease-in-out;
+      animation-iteration-count: infinite;
+      filter: blur(6px);
+    }
+
+    /* Different sizes and animations for variety */
+    .circle.small {
+      width: 40px;
+      height: 40px;
+      animation-name: floatUpDown;
+      animation-duration: 12s;
+    }
+    .circle.medium {
+      width: 70px;
+      height: 70px;
+      animation-name: floatUpDown;
+      animation-duration: 18s;
+      animation-delay: 3s;
+    }
+    .circle.large {
+      width: 110px;
+      height: 110px;
+      animation-name: floatUpDown;
+      animation-duration: 25s;
+      animation-delay: 6s;
+    }
+
+    @keyframes floatUpDown {
+      0%, 100% {
+        transform: translateY(0);
+        opacity: 0.3;
+      }
+      50% {
+        transform: translateY(-30px);
+        opacity: 0.6;
+      }
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 3rem auto;
+      background-color: rgba(20, 20, 20, 0.85);
+      padding: 2.5rem;
+      border-radius: 15px;
+      box-shadow: 0 0 40px rgba(0, 229, 255, 0.3);
+      position: relative;
+      z-index: 10;
+      color: #e0f7fa;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00e5ff;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #9efeff;
+      font-weight: bold;
+    }
+
+    input[type='text'] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      background-color: #202020;
+      color: #00e5ff;
+      box-shadow: inset 0 0 5px rgba(0, 229, 255, 0.2);
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(to right, #00e5ff, #00bcd4);
+      color: black;
+      font-weight: bold;
+      font-size: 1rem;
+      padding: 0.75rem;
+      margin-top: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    .btn:hover {
+      background: linear-gradient(to right, #00bcd4, #00e5ff);
+    }
+
+    .result,
+    .steps {
+      background-color: #1c1c1c;
+      padding: 1.5rem;
+      border-radius: 10px;
+      margin-top: 2rem;
+      box-shadow: 0 0 15px rgba(38, 255, 202, 0.2);
+    }
+
+    .result p,
+    .steps p {
+      font-size: 1.1rem;
+      color: #e0f7fa;
+      line-height: 1.6;
+    }
+
+    .result h2,
+    .steps h2 {
+      color: #00e5ff;
+      border-bottom: 1px solid #00e5ff;
+      padding-bottom: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    #chart-container {
+      margin-top: 3rem;
+      background-color: #1c1c1c;
+      padding: 2rem;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="floatingCircles">
+    <div class="circle small" style="top: 20%; left: 10%; animation-delay: 0s;"></div>
+    <div class="circle medium" style="top: 50%; left: 80%; animation-delay: 4s;"></div>
+    <div class="circle large" style="top: 70%; left: 40%; animation-delay: 2s;"></div>
+    <div class="circle small" style="top: 80%; left: 20%; animation-delay: 6s;"></div>
+    <div class="circle medium" style="top: 30%; left: 70%; animation-delay: 1s;"></div>
+  </div>
+
+  <div class="container">
+    <h1>📊 Multi-Linear Regression Solver</h1>
+
+    <form method="POST">
+      <div class="form-group">
+        <label for="x1">X1 Values (comma separated)</label>
+        <input type="text" name="x1" id="x1" required placeholder="e.g. 1,2,3,4" />
+      </div>
+      <div class="form-group">
+        <label for="x2">X2 Values (comma separated)</label>
+        <input type="text" name="x2" id="x2" required placeholder="e.g. 5,6,7,8" />
+      </div>
+      <div class="form-group">
+        <label for="y">Y Values (comma separated)</label>
+        <input type="text" name="y" id="y" required placeholder="e.g. 10,12,14,16" />
+      </div>
+      <button class="btn" type="submit">🚀 Solve Equation</button>
+    </form>
+
+    {% if result %}
+    <div class="result">
+      <h2>📈 Regression Coefficients</h2>
+      <p><strong>B1 (x1)</strong>: {{ result[0] }}</p>
+      <p><strong>B2 (x2)</strong>: {{ result[1] }}</p>
+      <p><strong>📘 Final Equation:</strong> y′ = {{ result[0] }}·x1 + {{ result[1] }}·x2</p>
+    </div>
+    {% endif %}
+
+    {% if steps %}
+    <div class="steps">
+      <h2>🧠 Step-by-Step Solution</h2>
+      {% for step in steps %}
+      <p>{{ step }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if predicted_y %}
+<div class="result">
+  <h2>📉 Predicted Y Values</h2>
+  {% for val in predicted_y %}
+  <p>y′{{ loop.index }} = {{ val }}</p>
+  {% endfor %}
+</div>
+{% endif %}
+
+    {% if result %}
+    <div id="chart-container">
+      <canvas id="regressionChart" width="400" height="200"></canvas>
+    </div>
+    <script>
+      const ctx = document.getElementById('regressionChart').getContext('2d');
+      const xVals = {{ X_vals | tojson }};
+      const yVals = {{ Y_vals | tojson }};
+      const coeffs = {{ result | tojson }};
+
+      const predicted = xVals.map((v) => coeffs[0] * v[0] + coeffs[1] * v[1]);
+
+      const data = {
+        datasets: [
+          {
+            type: 'scatter',
+            label: 'Actual Y (Data)',
+            data: xVals.map((v, i) => ({ x: v[0] + v[1], y: yVals[i] })),
+            backgroundColor: '#ff1744',
+          },
+          {
+            type: 'line',
+            label: 'Predicted Y',
+            data: xVals.map((v, i) => ({ x: v[0] + v[1], y: predicted[i] })),
+            borderColor: '#00e676',
+            backgroundColor: 'transparent',
+            tension: 0.4,
+          },
+        ],
+      };
+
+      const options = {
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'x1 + x2',
+              color: '#ffffff',
+            },
+            ticks: {
+              color: '#ffffff',
+            },
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Y Values',
+              color: '#ffffff',
+            },
+            ticks: {
+              color: '#ffffff',
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: '#ffffff',
+            },
+          },
+        },
+      };
+
+      new Chart(ctx, {
+        data: data,
+        options: options,
+      });
+    </script>
+    {% endif %}
+  </div>
+</body>
+</html>

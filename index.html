@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Multi-Linear Regression</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+    body {
+        margin: 0;
+        /* Removed overflow: hidden to enable scrolling */
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: white;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .text-box {
+        position: relative;
+        z-index: 10;
+        margin-top: 50px;
+        text-align: center;
+    }
+    
+    .hero {
+        position: relative;
+        z-index: 20;
+        margin: 30px 0;
+        text-align: center;
+    }
+    
+    .btn {
+        display: inline-block;
+        padding: 15px 30px;
+        background: linear-gradient(45deg, #00bcd4, #00ffcc);
+        color: white;
+        text-decoration: none;
+        border-radius: 50px;
+        font-weight: bold;
+        font-size: 18px;
+        box-shadow: 0 4px 15px rgba(0, 188, 212, 0.4);
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 188, 212, 0.6);
+    }
+    
+    .info-section {
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 30px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        position: relative;
+        z-index: 10;
+    }
+    
+    .info-section h2 {
+        color: #00ffcc;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .info-section p {
+        line-height: 1.6;
+        margin-bottom: 15px;
+    }
+    
+    #mathSymbolsCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        pointer-events: none;
+    }
+    
+    .calculation-bubble {
+        position: absolute;
+        background: rgba(0, 188, 212, 0.2);
+        border-radius: 50%;
+        filter: blur(20px);
+        z-index: 0;
+    }
+    /* Added content container to ensure proper scrolling */
+    
+    .content-container {
+        position: relative;
+        z-index: 10;
+        min-height: 100vh;
+        padding-bottom: 50px;
+    }
+    
+    @keyframes floatSymbols {
+        0% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(10px);
+        }
+        100% {
+            transform: translateY(0px);
+        }
+    }
+    
+    #mathSymbolsCanvas {
+        animation: floatSymbols 6s ease-in-out infinite;
+    }
+    
+    .fade-in {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 1s ease-out, transform 1s ease-out;
+    }
+    
+    .fade-in.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+</style>
+</head>
+<body>
+    <div class="fade-in">
+    <canvas id="mathSymbolsCanvas"></canvas>
+
+    <div class="content-container">
+      <!-- Venom Text Canvas Animation -->
+      <div class="text-box">
+        <canvas id="particleCanvas" width="800" height="250"></canvas>
+      </div>
+
+      <!-- Navigation Button -->
+      <div class="hero">
+        <a href="{{ url_for('calculate') }}" class="btn">Start Calculation</a>
+      </div>
+
+      <!-- Info Section -->
+      <div class="info-section">
+        <h2>About the Project</h2>
+        <p>
+          This project demonstrates Multi-Linear Parameter Regression, a statistical method to model
+          the relationship between one dependent variable and multiple independent variables.
+        </p>
+        <p>
+          You can input values, view detailed step-by-step matrix calculations, and analyze predictions
+          visually on a dynamic graph.
+        </p>
+        
+        <!-- Added more content to demonstrate scrolling -->
+        <h2>How It Works</h2>
+        <p>
+          The system uses matrix operations to calculate the coefficients that minimize the difference
+          between the observed and predicted values. The step-by-step calculations show how these
+          coefficients are derived from your input data.
+        </p>
+        
+        <h2>Features</h2>
+        <ul>
+          <li>Interactive input interface for your data</li>
+          <li>Detailed matrix calculation steps</li>
+          <li>Visualization of the regression model</li>
+          <li>Prediction capabilities for new data points</li>
+          <li>Export functionality for results</li>
+        </ul>
+        
+        <h2>Mathematical Foundation</h2>
+        <p>
+          The multi-linear regression model is represented by the equation:
+          Y = β₀ + β₁X₁ + β₂X₂ + ... + βₙXₙ + ε
+        </p>
+        <p>
+          Where Y is the dependent variable, X₁ to Xₙ are independent variables,
+          β₀ is the intercept, β₁ to βₙ are coefficients, and ε is the error term.
+        </p>
+        
+        <h2>Implementation Details</h2>
+        <p>
+          The solution is implemented using Python with NumPy for matrix operations and Flask for
+          the web interface. The frontend uses HTML5 Canvas for visualizations and animations.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // Main text particle animation
+      const canvas = document.getElementById("particleCanvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = 1000;
+      canvas.height = 250;
+    
+      // Draw the text in canvas to extract pixel positions
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 55px 'Segoe UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Welcome to Multi-", canvas.width / 2, 100);
+      ctx.fillText("Linear Parameter Regression", canvas.width / 2, 170);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+      function getRandomColor() {
+        // Cool neon-like theme colors
+        const colors = ["#00ffff", "#00ffcc", "#00bcd4", "#26c6da", "#1de9b6", "#18ffff", "#64ffda"];
+        return colors[Math.floor(Math.random() * colors.length)];
+      }
+    
+      let particlesArray = [];
+      for (let y = 0; y < canvas.height; y += 3) {
+        for (let x = 0; x < canvas.width; x += 3) {
+          let index = (y * canvas.width + x) * 4;
+          if (imageData.data[index + 3] > 128) {
+            particlesArray.push({
+              x: Math.random() * canvas.width,
+              y: Math.random() * canvas.height,
+              tx: x,
+              ty: y,
+              vx: 0,
+              vy: 0,
+              radius: Math.random() * 1.8 + 1.2,
+              alpha: 0,
+              color: getRandomColor()
+            });
+          }
+        }
+      }
+    
+      let mouse = { x: null, y: null, radius: 120 };
+      canvas.addEventListener("mousemove", function (e) {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+      });
+    
+      function hexToRgb(hex) {
+        let bigint = parseInt(hex.replace("#", ""), 16);
+        let r = (bigint >> 16) & 255;
+        let g = (bigint >> 8) & 255;
+        let b = bigint & 255;
+        return `${r},${g},${b}`;
+      }
+    
+      function animateParticles() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+          // Transparent black box behind text
+          ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+          for (let p of particlesArray) {
+            const dx = p.tx - p.x;
+            const dy = p.ty - p.y;
+            p.vx += dx * 0.008 + (Math.random() - 0.5) * 0.1;
+            p.vy += dy * 0.008 + (Math.random() - 0.5) * 0.1;
+        
+            let mx = p.x - mouse.x;
+            let my = p.y - mouse.y;
+            let dist = Math.sqrt(mx * mx + my * my);
+            if (dist < mouse.radius) {
+              let angle = Math.atan2(my, mx);
+              let force = (mouse.radius - dist) / mouse.radius;
+              p.vx += Math.cos(angle) * force * 2.2;
+              p.vy += Math.sin(angle) * force * 2.2;
+            }
+        
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vx *= 0.85;
+            p.vy *= 0.85;
+        
+            p.alpha = Math.min(p.alpha + 0.03, 1);
+            ctx.beginPath();
+            ctx.fillStyle = `rgba(${hexToRgb(p.color)}, ${p.alpha})`;
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+    
+        requestAnimationFrame(animateParticles);
+      }
+    
+      animateParticles();
+
+      // Math symbols animation with personalities
+      const symbolsCanvas = document.getElementById("mathSymbolsCanvas");
+      symbolsCanvas.width = window.innerWidth;
+      symbolsCanvas.height = window.innerHeight;
+      const symbolsCtx = symbolsCanvas.getContext("2d");
+      
+      // Math symbols with personalities
+      const mathSymbols = [
+        { char: "Σ", color: "#00ffff", size: 30, speed: 2, x: 0, y: 0, vx: 0, vy: 0, eyes: true },
+        { char: "β", color: "#ff00ff", size: 28, speed: 1.8, x: 0, y: 0, vx: 0, vy: 0, eyes: true },
+        { char: "α", color: "#ffff00", size: 26, speed: 2.2, x: 0, y: 0, vx: 0, vy: 0, eyes: true },
+        { char: "+", color: "#00ff00", size: 32, speed: 1.5, x: 0, y: 0, vx: 0, vy: 0, eyes: true },
+        { char: "∫", color: "#ff9900", size: 34, speed: 1.7, x: 0, y: 0, vx: 0, vy: 0, eyes: true },
+        { char: "-", color: "#9900ff", size: 24, speed: 2.3, x: 0, y: 0, vx: 0, vy: 0, eyes: true },
+        { char: "π", color: "#00ffcc", size: 36, speed: 1.4, x: 0, y: 0, vx: 0, vy: 0, eyes: true },
+        { char: "√", color: "#ff6699", size: 38, speed: 1.6, x: 0, y: 0, vx: 0, vy: 0, eyes: true },
+        { char: "≈", color: "#66ff33", size: 30, speed: 2.1, x: 0, y: 0, vx: 0, vy: 0, eyes: false },
+        { char: "*", color: "#3366ff", size: 28, speed: 1.9, x: 0, y: 0, vx: 0, vy: 0, eyes: false }
+      ];
+      
+      // Initialize symbols positions
+      mathSymbols.forEach(symbol => {
+        symbol.x = Math.random() * symbolsCanvas.width;
+        symbol.y = Math.random() * symbolsCanvas.height;
+        symbol.vx = (Math.random() - 0.5) * symbol.speed;
+        symbol.vy = (Math.random() - 0.5) * symbol.speed;
+        symbol.targetX = null;
+        symbol.targetY = null;
+        symbol.isFollowingMouse = false;
+      });
+      
+      // Mouse interaction
+      let mouseX = null;
+      let mouseY = null;
+      let mouseSymbolFollowers = [];
+      
+      document.addEventListener("mousemove", (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        
+        // Occasionally have symbols follow the mouse
+        if (Math.random() < 0.02 && mouseSymbolFollowers.length < 3) {
+          const availableSymbols = mathSymbols.filter(s => !mouseSymbolFollowers.includes(s));
+          if (availableSymbols.length > 0) {
+            const follower = availableSymbols[Math.floor(Math.random() * availableSymbols.length)];
+            follower.isFollowingMouse = true;
+            follower.followDuration = Math.random() * 3000 + 2000; // 2-5 seconds
+            mouseSymbolFollowers.push(follower);
+          }
+        }
+      });
+      
+      // Calculation bubbles
+      const calculationBubbles = [];
+      
+      function createCalculationBubble(x, y) {
+        calculationBubbles.push({
+          x,
+          y,
+          size: Math.random() * 100 + 50,
+          growth: Math.random() * 0.5 + 0.2,
+          maxSize: Math.random() * 150 + 100,
+          shrinking: false
+        });
+      }
+      
+      // Animation loop for math symbols
+      function animateMathSymbols() {
+        symbolsCtx.clearRect(0, 0, symbolsCanvas.width, symbolsCanvas.height);
+        
+        // Update and draw calculation bubbles
+        for (let i = calculationBubbles.length - 1; i >= 0; i--) {
+          const bubble = calculationBubbles[i];
+          
+          if (!bubble.shrinking) {
+            bubble.size += bubble.growth;
+            if (bubble.size >= bubble.maxSize) {
+              bubble.shrinking = true;
+            }
+          } else {
+            bubble.size -= bubble.growth;
+            if (bubble.size <= 0) {
+              calculationBubbles.splice(i, 1);
+              continue;
+            }
+          }
+          
+          symbolsCtx.beginPath();
+          symbolsCtx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+          symbolsCtx.fillStyle = `rgba(0, 188, 212, ${0.1 * (bubble.size / bubble.maxSize)})`;
+          symbolsCtx.fill();
+        }
+        
+        // Update and draw math symbols
+        mathSymbols.forEach((symbol, index) => {
+          // Update position
+          if (symbol.isFollowingMouse && mouseX !== null && mouseY !== null) {
+            // Follow mouse with some delay for a natural effect
+            symbol.targetX = mouseX + (index % 2 === 0 ? -40 : 40);
+            symbol.targetY = mouseY + (index % 3 === 0 ? -30 : 30);
+            
+            symbol.followDuration -= 16; // Roughly 60fps
+            
+            if (symbol.followDuration <= 0) {
+              symbol.isFollowingMouse = false;
+              const idx = mouseSymbolFollowers.indexOf(symbol);
+              if (idx !== -1) mouseSymbolFollowers.splice(idx, 1);
+            }
+          } else {
+            // Random wandering
+            if (Math.random() < 0.02 || symbol.targetX === null) {
+              symbol.targetX = Math.random() * symbolsCanvas.width;
+              symbol.targetY = Math.random() * symbolsCanvas.height;
+            }
+          }
+          
+          // Move toward target
+          if (symbol.targetX !== null) {
+            const dx = symbol.targetX - symbol.x;
+            const dy = symbol.targetY - symbol.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 5) {
+              symbol.vx += dx * 0.01;
+              symbol.vy += dy * 0.01;
+            } else {
+              // Occasionally create a calculation bubble when reaching target
+              if (Math.random() < 0.1) {
+                createCalculationBubble(symbol.x, symbol.y);
+              }
+            }
+          }
+          
+          // Apply velocity with damping
+          symbol.x += symbol.vx;
+          symbol.y += symbol.vy;
+          symbol.vx *= 0.95;
+          symbol.vy *= 0.95;
+          
+          // Bounce off walls
+          if (symbol.x < 0 || symbol.x > symbolsCanvas.width) symbol.vx *= -1;
+          if (symbol.y < 0 || symbol.y > symbolsCanvas.height) symbol.vy *= -1;
+          
+          // Keep within bounds
+          symbol.x = Math.max(0, Math.min(symbolsCanvas.width, symbol.x));
+          symbol.y = Math.max(0, Math.min(symbolsCanvas.height, symbol.y));
+          
+          // Draw the symbol
+          const pulse = Math.sin(Date.now() / 400 + index) * 2;
+          symbolsCtx.font = `bold ${symbol.size + pulse}px 'Segoe UI', sans-serif`;
+          symbolsCtx.fillStyle = symbol.color;
+          symbolsCtx.textAlign = "center";
+          symbolsCtx.textBaseline = "middle";
+          symbolsCtx.fillText(symbol.char, symbol.x, symbol.y);
+          
+          // Draw eyes if enabled
+          if (symbol.eyes) {
+            const eyeSize = symbol.size * 0.15;
+            const eyeOffsetX = symbol.size * 0.2;
+            const eyeOffsetY = -symbol.size * 0.15;
+            
+            // Calculate eye direction (look at mouse or wander)
+            let lookX, lookY;
+            if (mouseX !== null && mouseY !== null && Math.random() < 0.7) {
+              lookX = mouseX - symbol.x;
+              lookY = mouseY - symbol.y;
+            } else {
+              lookX = (Math.random() - 0.5) * 50;
+              lookY = (Math.random() - 0.5) * 50;
+            }
+            
+            const lookAngle = Math.atan2(lookY, lookX);
+            const pupilDistance = eyeSize * 0.3;
+            
+            // Left eye
+            symbolsCtx.beginPath();
+            symbolsCtx.arc(
+              symbol.x - eyeOffsetX, 
+              symbol.y + eyeOffsetY, 
+              eyeSize, 0, Math.PI * 2
+            );
+            symbolsCtx.fillStyle = "white";
+            symbolsCtx.fill();
+            
+            symbolsCtx.beginPath();
+            symbolsCtx.arc(
+              symbol.x - eyeOffsetX + Math.cos(lookAngle) * pupilDistance, 
+              symbol.y + eyeOffsetY + Math.sin(lookAngle) * pupilDistance, 
+              eyeSize * 0.5, 0, Math.PI * 2
+            );
+            symbolsCtx.fillStyle = "black";
+            symbolsCtx.fill();
+            
+            // Right eye
+            symbolsCtx.beginPath();
+            symbolsCtx.arc(
+              symbol.x + eyeOffsetX, 
+              symbol.y + eyeOffsetY, 
+              eyeSize, 0, Math.PI * 2
+            );
+            symbolsCtx.fillStyle = "white";
+            symbolsCtx.fill();
+            
+            symbolsCtx.beginPath();
+            symbolsCtx.arc(
+              symbol.x + eyeOffsetX + Math.cos(lookAngle) * pupilDistance, 
+              symbol.y + eyeOffsetY + Math.sin(lookAngle) * pupilDistance, 
+              eyeSize * 0.5, 0, Math.PI * 2
+            );
+            symbolsCtx.fillStyle = "black";
+            symbolsCtx.fill();
+          }
+          
+          // Occasionally draw limbs for some symbols
+          if (Math.random() < 0.1 && symbol.eyes) {
+            const armLength = symbol.size * 0.8;
+            const legLength = symbol.size * 0.6;
+            
+            // Arms
+            symbolsCtx.beginPath();
+            symbolsCtx.moveTo(symbol.x, symbol.y + symbol.size * 0.2);
+            symbolsCtx.lineTo(
+              symbol.x + (Math.random() - 0.5) * armLength, 
+              symbol.y + symbol.size * 0.3 + (Math.random() * armLength * 0.5)
+            );
+            symbolsCtx.lineWidth = symbol.size * 0.1;
+            symbolsCtx.strokeStyle = symbol.color;
+            symbolsCtx.stroke();
+            
+            symbolsCtx.beginPath();
+            symbolsCtx.moveTo(symbol.x, symbol.y + symbol.size * 0.2);
+            symbolsCtx.lineTo(
+              symbol.x + (Math.random() - 0.5) * armLength, 
+              symbol.y + symbol.size * 0.3 + (Math.random() * armLength * 0.5)
+            );
+            symbolsCtx.lineWidth = symbol.size * 0.1;
+            symbolsCtx.strokeStyle = symbol.color;
+            symbolsCtx.stroke();
+            
+            // Legs
+            symbolsCtx.beginPath();
+            symbolsCtx.moveTo(symbol.x - symbol.size * 0.15, symbol.y + symbol.size * 0.4);
+            symbolsCtx.lineTo(
+              symbol.x - symbol.size * 0.3 + (Math.random() - 0.5) * legLength * 0.5, 
+              symbol.y + symbol.size * 0.6 + (Math.random() * legLength * 0.5)
+            );
+            symbolsCtx.lineWidth = symbol.size * 0.1;
+            symbolsCtx.strokeStyle = symbol.color;
+            symbolsCtx.stroke();
+            
+            symbolsCtx.beginPath();
+            symbolsCtx.moveTo(symbol.x + symbol.size * 0.15, symbol.y + symbol.size * 0.4);
+            symbolsCtx.lineTo(
+              symbol.x + symbol.size * 0.3 + (Math.random() - 0.5) * legLength * 0.5, 
+              symbol.y + symbol.size * 0.6 + (Math.random() * legLength * 0.5)
+            );
+            symbolsCtx.lineWidth = symbol.size * 0.1;
+            symbolsCtx.strokeStyle = symbol.color;
+            symbolsCtx.stroke();
+          }
+        });
+        
+        requestAnimationFrame(animateMathSymbols);
+      }
+      
+      // Start animations
+      animateMathSymbols();
+      
+      // Handle window resize
+      window.addEventListener("resize", () => {
+        symbolsCanvas.width = window.innerWidth;
+        symbolsCanvas.height = window.innerHeight;
+      });
+    </script>
+    <script>
+        const faders = document.querySelectorAll('.fade-in');
+        
+        const appearOnScroll = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+            }
+          });
+        }, { threshold: 0.1 });
+        
+        faders.forEach(el => appearOnScroll.observe(el));
+        </script>
+    </div>     
+</body>
+</html>
